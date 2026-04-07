@@ -1,0 +1,354 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: NFT Gift Casino API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: game
+    description: Casino game operations
+  - name: leaderboard
+    description: Leaderboard operations
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /game/player/{userId}:
+    get:
+      operationId: getPlayer
+      tags: [game]
+      summary: Get player info
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Player data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Player"
+        "404":
+          description: Player not found
+
+  /game/player:
+    post:
+      operationId: createPlayer
+      tags: [game]
+      summary: Create or get a player
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePlayerBody"
+      responses:
+        "200":
+          description: Player created or retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Player"
+
+  /game/spin:
+    post:
+      operationId: spin
+      tags: [game]
+      summary: Spin the slot machine
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SpinBody"
+      responses:
+        "200":
+          description: Spin result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpinResult"
+        "400":
+          description: Insufficient balance
+
+  /game/gifts/{userId}:
+    get:
+      operationId: getPlayerGifts
+      tags: [game]
+      summary: Get player's NFT gifts
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Player gifts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Gift"
+
+  /game/stats/{userId}:
+    get:
+      operationId: getPlayerStats
+      tags: [game]
+      summary: Get player statistics
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Player stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlayerStats"
+
+  /leaderboard:
+    get:
+      operationId: getLeaderboard
+      tags: [leaderboard]
+      summary: Get top players leaderboard
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: Leaderboard entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LeaderboardEntry"
+
+  /game/recent-wins:
+    get:
+      operationId: getRecentWins
+      tags: [game]
+      summary: Get recent big wins across all players
+      responses:
+        "200":
+          description: Recent wins
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RecentWin"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    Player:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        username:
+          type: string
+        balance:
+          type: number
+        totalSpins:
+          type: integer
+        totalWon:
+          type: number
+        totalLost:
+          type: number
+        createdAt:
+          type: string
+      required:
+        - id
+        - userId
+        - username
+        - balance
+        - totalSpins
+        - totalWon
+        - totalLost
+        - createdAt
+
+    CreatePlayerBody:
+      type: object
+      properties:
+        userId:
+          type: string
+        username:
+          type: string
+      required:
+        - userId
+        - username
+
+    SpinBody:
+      type: object
+      properties:
+        userId:
+          type: string
+        betAmount:
+          type: number
+      required:
+        - userId
+        - betAmount
+
+    SpinResult:
+      type: object
+      properties:
+        reels:
+          type: array
+          items:
+            type: string
+        isWin:
+          type: boolean
+        winAmount:
+          type: number
+        newBalance:
+          type: number
+        giftWon:
+          $ref: "#/components/schemas/Gift"
+          nullable: true
+        multiplier:
+          type: number
+        combo:
+          type: string
+          nullable: true
+      required:
+        - reels
+        - isWin
+        - winAmount
+        - newBalance
+        - multiplier
+
+    Gift:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        rarity:
+          type: string
+        emoji:
+          type: string
+        value:
+          type: number
+        wonAt:
+          type: string
+        userId:
+          type: string
+      required:
+        - id
+        - name
+        - rarity
+        - emoji
+        - value
+        - wonAt
+        - userId
+
+    PlayerStats:
+      type: object
+      properties:
+        totalSpins:
+          type: integer
+        totalWon:
+          type: number
+        totalLost:
+          type: number
+        biggestWin:
+          type: number
+        winRate:
+          type: number
+        giftsCollected:
+          type: integer
+        rareGifts:
+          type: integer
+      required:
+        - totalSpins
+        - totalWon
+        - totalLost
+        - biggestWin
+        - winRate
+        - giftsCollected
+        - rareGifts
+
+    LeaderboardEntry:
+      type: object
+      properties:
+        rank:
+          type: integer
+        userId:
+          type: string
+        username:
+          type: string
+        totalWon:
+          type: number
+        giftsCollected:
+          type: integer
+        biggestWin:
+          type: number
+      required:
+        - rank
+        - userId
+        - username
+        - totalWon
+        - giftsCollected
+        - biggestWin
+
+    RecentWin:
+      type: object
+      properties:
+        username:
+          type: string
+        giftName:
+          type: string
+        giftEmoji:
+          type: string
+        winAmount:
+          type: number
+        rarity:
+          type: string
+        wonAt:
+          type: string
+      required:
+        - username
+        - giftName
+        - giftEmoji
+        - winAmount
+        - rarity
+        - wonAt
